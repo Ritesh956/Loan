@@ -23,25 +23,27 @@ export function LoanCard({ loan, amount }: LoanCardProps) {
       </CardHeader>
       <CardContent className="pt-6">
         <div className="space-y-4">
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium">Interest Rate</span>
-            <span className="text-2xl font-bold text-primary">{loan.interestRate}%</span>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <span className="text-sm font-medium">Interest Rate</span>
+              <span className="text-2xl font-bold text-primary block">{loan.interestRate}%</span>
+            </div>
+            <div className="space-y-1">
+              <span className="text-sm font-medium">Tenure</span>
+              <span className="text-2xl font-bold block">{loan.tenure} months</span>
+            </div>
+            <div className="space-y-1">
+              <span className="text-sm font-medium">Monthly EMI</span>
+              <span className="text-2xl font-bold block">${emi.toFixed(2)}</span>
+            </div>
+            <div className="space-y-1">
+              <span className="text-sm font-medium">Total Repayment</span>
+              <span className="text-2xl font-bold block">${totalRepayment.toFixed(2)}</span>
+            </div>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium">Tenure</span>
-            <span>{loan.tenure} months</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium">Monthly EMI</span>
-            <span className="font-semibold">${emi.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm font-medium">Total Repayment</span>
-            <span className="font-semibold">${totalRepayment.toFixed(2)}</span>
-          </div>
-          <div className="flex justify-between items-center">
+          <div className="space-y-1">
             <span className="text-sm font-medium">Processing Fee</span>
-            <span>{loan.processingFee}%</span>
+            <span className="text-xl font-bold block">{loan.processingFee}%</span>
           </div>
           <div>
             <span className="text-sm font-medium">Features</span>

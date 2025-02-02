@@ -2,53 +2,89 @@
 
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Calendar } from "@/components/ui/calendar"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Progress } from "@/components/ui/progress"
 import { AlertCircle, DollarSign, CalendarIcon, TrendingUp } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Button } from "@/components/ui/button"
 
-interface UserLoan {
+interface Loan {
   id: string
   name: string
-  outstandingBalance: number
+  amount: number
+  interestRate: number
+  term: number
+  startDate: Date
   nextPaymentDue: Date
-  totalInterestPaid: number
-  isOverdue: boolean
+  outstandingBalance: number
 }
 
-const mockUserLoans: UserLoan[] = [
+const mockLoans: Loan[] = [
   {
     id: "1",
     name: "Home Loan",
-    outstandingBalance: 200000,
-    nextPaymentDue: new Date(2023, 5, 15),
-    totalInterestPaid: 15000,
-    isOverdue: false,
+    amount: 200000,
+    interestRate: 3.5,
+    term: 360,
+    startDate: new Date("2023-01-01"),
+    nextPaymentDue: new Date("2023-02-01"),
+    outstandingBalance: 198000,
   },
   {
     id: "2",
     name: "Car Loan",
-    outstandingBalance: 15000,
-    nextPaymentDue: new Date(2023, 5, 1),
-    totalInterestPaid: 2000,
-    isOverdue: true,
-  },
-  {
-    id: "3",
-    name: "Personal Loan",
-    outstandingBalance: 5000,
-    nextPaymentDue: new Date(2023, 5, 30),
-    totalInterestPaid: 500,
-    isOverdue: false,
+    amount: 30000,
+    interestRate: 4.5,
+    term: 60,
+    startDate: new Date("2023-03-01"),
+    nextPaymentDue: new Date("2023-04-01"),
+    outstandingBalance: 29000,
   },
 ]
 
 export function UserDashboard() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date())
+  const [loans, setLoans] = useState<Loan[]>(mockLoans)
+  const [newLoan, setNewLoan] = useState({
+    name: "",
+    amount: 0,
+    interestRate: 0,
+    term: 0,
+    startDate: new Date(),
+  })
 
-  const getDueDates = (date: Date): UserLoan[] => {
-    return mockUserLoans.filter(
+  const totalOutstanding = loans.reduce((sum, loan) => sum + loan.outstandingBalance, 0)
+  const totalInterestPaid = loans.reduce((sum, loan) => {
+    const monthlyRate = loan.interestRate / 12 / 100
+    const monthlyPayment =
+      (loan.amount * monthlyRate * Math.pow(1 + monthlyRate, loan.term)) / (Math.pow(1 + monthlyRate, loan.term) - 1)
+    const totalPayments = monthlyPayment * loan.term
+    return sum + (totalPayments - loan.amount)
+  }, 0)
+
+  const handleAddLoan = (e: React.FormEvent) => {
+    e.preventDefault()
+    const newLoanWithId: Loan = {
+      ...newLoan,
+      id: (loans.length + 1).toString(),
+      nextPaymentDue: new Date(newLoan.startDate.getTime() + 30 * 24 * 60 * 60 * 1000), // 30 days after start date
+      outstandingBalance: newLoan.amount,
+    }
+    setLoans([...loans, newLoanWithId])
+    setNewLoan({
+      name: "",
+      amount: 0,
+      interestRate: 0,
+      term: 0,
+      startDate: new Date(),
+    })
+  }
+
+  const getDueDates = (date: Date): Loan[] => {
+    return loans.filter(
       (loan) =>
         loan.nextPaymentDue.getDate() === date.getDate() &&
         loan.nextPaymentDue.getMonth() === date.getMonth() &&
@@ -56,12 +92,9 @@ export function UserDashboard() {
     )
   }
 
-  const totalOutstanding = mockUserLoans.reduce((sum, loan) => sum + loan.outstandingBalance, 0)
-  const totalInterestPaid = mockUserLoans.reduce((sum, loan) => sum + loan.totalInterestPaid, 0)
-
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Outstanding</CardTitle>
@@ -88,7 +121,7 @@ export function UserDashboard() {
             <CalendarIcon className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{mockUserLoans.length}</div>
+            <div className="text-2xl font-bold">{loans.length}</div>
             <p className="text-xs text-muted-foreground">Currently active loans</p>
           </CardContent>
         </Card>
@@ -99,7 +132,7 @@ export function UserDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {new Date(Math.min(...mockUserLoans.map((loan) => loan.nextPaymentDue.getTime()))).toLocaleDateString()}
+              {new Date(Math.min(...loans.map((loan) => loan.nextPaymentDue.getTime()))).toLocaleDateString()}
             </div>
             <p className="text-xs text-muted-foreground">Upcoming payment due</p>
           </CardContent>
@@ -111,30 +144,123 @@ export function UserDashboard() {
           <CardTitle>Loan Overview</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-8">
-            {mockUserLoans.map((loan) => (
-              <div key={loan.id} className="flex items-center">
-                <div className="space-y-1 flex-1">
-                  <p className="text-sm font-medium leading-none">
-                    {loan.name}
-                    {loan.isOverdue && (
-                      <Badge variant="destructive" className="ml-2">
-                        Overdue
-                      </Badge>
-                    )}
-                  </p>
+          <div className="space-y-4">
+            {loans.map((loan) => (
+              <div key={loan.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium leading-none">{loan.name}</p>
                   <p className="text-sm text-muted-foreground">
                     Next payment: {loan.nextPaymentDue.toLocaleDateString()}
                   </p>
                 </div>
-                <div className="ml-auto font-medium">${loan.outstandingBalance.toFixed(2)}</div>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="font-medium cursor-help mt-2 sm:mt-0">${loan.outstandingBalance.toFixed(2)}</div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Outstanding balance</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             ))}
           </div>
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Add New Loan</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleAddLoan} className="space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="loanName">Loan Name</Label>
+                <Input
+                  id="loanName"
+                  value={newLoan.name}
+                  onChange={(e) => setNewLoan({ ...newLoan, name: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="amount">Loan Amount</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  value={newLoan.amount}
+                  onChange={(e) => setNewLoan({ ...newLoan, amount: Number(e.target.value) })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="interestRate">Interest Rate (%)</Label>
+                <Input
+                  id="interestRate"
+                  type="number"
+                  step="0.1"
+                  value={newLoan.interestRate}
+                  onChange={(e) => setNewLoan({ ...newLoan, interestRate: Number(e.target.value) })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="term">Loan Term (months)</Label>
+                <Input
+                  id="term"
+                  type="number"
+                  value={newLoan.term}
+                  onChange={(e) => setNewLoan({ ...newLoan, term: Number(e.target.value) })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="startDate">Start Date</Label>
+                <Input
+                  id="startDate"
+                  type="date"
+                  value={newLoan.startDate.toISOString().split("T")[0]}
+                  onChange={(e) => setNewLoan({ ...newLoan, startDate: new Date(e.target.value) })}
+                  required
+                />
+              </div>
+            </div>
+            <Button type="submit" className="w-full">
+              Add Loan
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Loan Distribution</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={200}>
+            <PieChart>
+              <Pie
+                data={loans}
+                dataKey="outstandingBalance"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                fill="#8884d8"
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+              >
+                {loans.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={`hsl(${index * 45}, 70%, 60%)`} />
+                ))}
+              </Pie>
+            </PieChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Repayment Schedule</CardTitle>
@@ -152,7 +278,7 @@ export function UserDashboard() {
                 {getDueDates(selectedDate || new Date()).map((loan) => (
                   <div key={loan.id} className="mb-2 flex justify-between items-center">
                     <span>{loan.name}</span>
-                    <span className="font-medium">${loan.outstandingBalance.toFixed(2)}</span>
+                    <span className="font-medium">${(loan.amount / loan.term).toFixed(2)}</span>
                   </div>
                 ))}
                 {getDueDates(selectedDate || new Date()).length === 0 && (
@@ -169,9 +295,9 @@ export function UserDashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-8">
-              {mockUserLoans.map((loan) => {
-                const totalLoanAmount = loan.outstandingBalance + loan.totalInterestPaid
-                const progress = (loan.totalInterestPaid / totalLoanAmount) * 100
+              {loans.map((loan) => {
+                const totalPayments = loan.amount * (1 + loan.interestRate / 100)
+                const progress = ((totalPayments - loan.outstandingBalance) / totalPayments) * 100
                 return (
                   <div key={loan.id} className="space-y-2">
                     <div className="flex justify-between text-sm">
@@ -186,17 +312,6 @@ export function UserDashboard() {
           </CardContent>
         </Card>
       </div>
-
-      {mockUserLoans.some((loan) => loan.isOverdue) && (
-        <Alert variant="destructive">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Overdue Payments</AlertTitle>
-          <AlertDescription>
-            You have overdue payments on one or more loans. Please make the payments as soon as possible to avoid
-            additional charges.
-          </AlertDescription>
-        </Alert>
-      )}
     </div>
   )
 }

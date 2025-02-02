@@ -69,7 +69,7 @@ export function RepaymentPlanSimulator() {
         <CardTitle>Repayment Plan Simulator</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label htmlFor="loanAmount">Loan Amount</Label>
             <Input
@@ -108,7 +108,7 @@ export function RepaymentPlanSimulator() {
 
         {simulationResult && (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <Card>
                 <CardHeader>
                   <CardTitle>Current Plan</CardTitle>
@@ -164,7 +164,7 @@ export function RepaymentPlanSimulator() {
                       currentBalance: current.balance,
                       newBalance: simulationResult.newSchedule[index]?.balance || 0,
                     }))}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    margin={{ top: 5, right: 20, left: 20, bottom: 5 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />

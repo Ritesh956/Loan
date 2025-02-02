@@ -35,7 +35,7 @@ export function LoanComparisonTool() {
           <CardTitle>Loan Search Criteria</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="space-y-2">
               <Label htmlFor="amount">Loan Amount</Label>
               <Input id="amount" type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
